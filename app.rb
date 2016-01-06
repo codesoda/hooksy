@@ -61,7 +61,7 @@ post '/twilio/mailer' do
   if channels.include?('SLACK')
     Slack.configure { |config| config.token = ENV['SLACK_API_TOKEN'] }
     client = Slack::Web::Client.new
-    client.chat_postMessage(channel: ENV['SLACK_CHANNEL'], text: "#{subject}: #{message}", as_user: true)
+    client.chat_postMessage(channel: ENV['SLACK_CHANNEL'], text: "#{subject}: \n#{message}", as_user: true)
   end
 
   [
