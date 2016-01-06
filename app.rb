@@ -35,6 +35,7 @@ post '/twilio/mailer' do
   sender = params['From']
   receipient = params['To']
   message = params['Body']
+  subject = "SMS received from #{sender} to #{receipient}"
 
   if ENV['DEBUG']
     lines = []
@@ -46,11 +47,21 @@ post '/twilio/mailer' do
     message += "\n\n" + lines.join("\n")
   end
 
-  Mail.deliver do
-    from ENV['EMAIL_FROM']
-    to ENV['EMAIL_TO']
-    subject "SMS received from #{sender} to #{receipient}"
-    body message
+  channels = ENV.fetch('CHANNELS', '').split(',')
+
+  if channels.include?('EMAIL')
+    Mail.deliver do
+      from ENV['EMAIL_FROM']
+      to ENV['EMAIL_TO']
+      subject subject
+      body message
+    end
+  end
+
+  if channels.include?('SLACK')
+    Slack.configure { |config| config.token = ENV['SLACK_API_TOKEN'] }
+    client = Slack::Web::Client.new
+    client.chat_postMessage(channel: ENV['SLACK_CHANNEL'], text: "#{subject}: #{message}", as_user: true)
   end
 
   [
